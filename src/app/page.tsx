@@ -51,7 +51,7 @@ export default async function Home() {
           {/* LOGO REAL */}
           <div className="relative w-64 h-64 mb-8 transition-transform duration-700 hover:scale-105">
              <Image 
-               src="/images/logo-placeholder.png" // OJO: Asegúrate que esta imagen exista o cámbiala por "/images/logo.png" si ya la subiste
+               src="/images/logo.png" 
                alt="Banetón Panadería" 
                fill 
                className="object-contain drop-shadow-xl"
