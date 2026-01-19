@@ -1,0 +1,52 @@
+@import "tailwindcss";
+
+@theme {
+  /* Paleta "Soft Minimal" - Refinada para contraste y calidez */
+  --color-brand-cream: #FDFBF7;       /* Más luminoso para mejor contraste con las cards */
+  --color-brand-green: #9CB09C;       
+  --color-brand-green-dark: #7A8F7A;  
+  --color-brand-terracotta: #D4A373;  /* Ligeramente más vibrante para acentos */
+  --color-brand-brown: #8D6E63;       
+  --color-brand-dark: #231F1E;        /* Negro suave, no #000 */
+  --color-brand-gray: #78716C;        /* Stone-500 para mejor legibilidad */
+  --color-brand-surface: #FFFFFF;     /* Color de las tarjetas */
+
+  --font-sans: var(--font-outfit); 
+  
+  /* Sombras "Apple-like" (Difusas y suaves) */
+  --shadow-soft-sm: 0 2px 8px -2px rgba(45, 36, 34, 0.05);
+  --shadow-soft-md: 0 12px 24px -6px rgba(45, 36, 34, 0.08);
+  --shadow-soft-lg: 0 24px 48px -12px rgba(45, 36, 34, 0.12);
+  --shadow-float: 0 20px 40px -4px rgba(45, 36, 34, 0.15);
+}
+
+/* Estilos Base */
+body {
+  background-color: var(--color-brand-cream);
+  color: var(--color-brand-dark);
+  -webkit-font-smoothing: antialiased; 
+  -moz-osx-font-smoothing: grayscale;
+  /* Patrón de grano sutil para textura "artesanal" (Opcional, pero suma calidad) */
+  background-image: radial-gradient(#E6B8A2 0.5px, transparent 0.5px);
+  background-size: 24px 24px;
+  background-position: 0 0;
+}
+
+/* Utilitarios */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none; 
+  scrollbar-width: none; 
+}
+
+/* Animación de entrada suave */
+@keyframes fade-in-up {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-enter {
+  animation: fade-in-up 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
