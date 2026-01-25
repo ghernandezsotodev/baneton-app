@@ -1,6 +1,6 @@
 "use client";
 
-import { Plus, Minus, ShoppingBag, Clock, Trash2 } from "lucide-react";
+import { Plus, Minus, ShoppingBag, Clock, Trash2, Ban } from "lucide-react"; // Agregué icono 'Ban' para Agotado
 import { Product } from "@/data/products";
 import { useCartStore } from "@/store/cart-store";
 import Image from "next/image";
@@ -16,8 +16,15 @@ export default function ProductCard({ product, priority = false }: ProductCardPr
   const cartItem = items.find((item) => item.id === product.id);
   const quantity = cartItem?.quantity || 0;
   
-  // CORRECCIÓN: Usamos 'isAvailable' que viene de Sanity
-  const isAvailable = product.isAvailable; 
+  // --- LÓGICA DE ESTADO ---
+  // Ahora leemos 'status'. Si por alguna razón el dato viene antiguo (undefined), asumimos 'available'.
+  const status = product.status || 'available'; 
+  const isAvailable = status === 'available';
+  const isSoldOut = status === 'sold_out';
+  const isComingSoon = status === 'coming_soon';
+
+  // Solo se puede comprar si está 'available'
+  const canBuy = isAvailable; 
 
   const handleRemoveAll = () => {
     for (let i = 0; i < quantity; i++) {
@@ -27,7 +34,7 @@ export default function ProductCard({ product, priority = false }: ProductCardPr
 
   return (
     <article className={`group relative bg-white rounded-[2rem] p-5 shadow-[0_8px_30px_rgb(0,0,0,0.04)] transition-all duration-500 w-full mx-auto max-w-sm border border-white/60 
-      ${isAvailable ? 'hover:shadow-[0_20px_40px_rgb(0,0,0,0.08)] hover:-translate-y-1' : 'opacity-90 grayscale-[0.2]'}`}>
+      ${canBuy ? 'hover:shadow-[0_20px_40px_rgb(0,0,0,0.08)] hover:-translate-y-1' : 'opacity-90 grayscale-[0.1]'}`}>
       
       {/* 1. Imagen */}
       <div className="relative aspect-[4/3] w-full rounded-[1.5rem] overflow-hidden mb-6 bg-[#F5F0EB] shadow-inner">
@@ -35,7 +42,7 @@ export default function ProductCard({ product, priority = false }: ProductCardPr
           src={product.image} 
           alt={product.name} 
           fill 
-          className={`object-cover transition-transform duration-700 ease-out ${isAvailable ? 'group-hover:scale-105' : ''}`}
+          className={`object-cover transition-transform duration-700 ease-out ${canBuy ? 'group-hover:scale-105' : ''}`}
           sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
           priority={priority}
         />
@@ -47,14 +54,26 @@ export default function ProductCard({ product, priority = false }: ProductCardPr
           </span>
         </div>
 
-        {/* Overlay "Próximamente" */}
-        {!isAvailable && (
+        {/* --- OVERLAYS DE ESTADO --- */}
+        
+        {/* Caso: PRÓXIMAMENTE */}
+        {isComingSoon && (
             <div className="absolute inset-0 bg-brand-cream/40 backdrop-blur-[2px] flex items-center justify-center z-10">
                 <span className="bg-brand-dark text-white px-4 py-2 rounded-full text-xs font-bold uppercase tracking-widest shadow-lg transform -rotate-3 border border-white/20">
                     Próximamente
                 </span>
             </div>
         )}
+
+        {/* Caso: AGOTADO */}
+        {isSoldOut && (
+            <div className="absolute inset-0 bg-white/50 backdrop-blur-[2px] flex items-center justify-center z-10">
+                <span className="bg-red-500 text-white px-4 py-2 rounded-full text-xs font-bold uppercase tracking-widest shadow-lg transform -rotate-3 border border-white/20">
+                    Agotado
+                </span>
+            </div>
+        )}
+
       </div>
 
       {/* 2. Información (CENTRADA) */}
@@ -70,17 +89,31 @@ export default function ProductCard({ product, priority = false }: ProductCardPr
 
       {/* 3. Controles de Acción */}
       <div className="h-14 relative w-full"> 
-        {/* CASO A: NO DISPONIBLE */}
-        {!isAvailable ? (
+        
+        {/* CASO A: NO SE PUEDE COMPRAR (Agotado o Próximamente) */}
+        {!canBuy ? (
            <button
             disabled
-            className="w-full h-full rounded-full bg-gray-100 text-gray-400 font-semibold text-[15px] tracking-wide cursor-not-allowed flex items-center justify-center gap-2 border border-gray-200"
+            className={`w-full h-full rounded-full font-semibold text-[15px] tracking-wide cursor-not-allowed flex items-center justify-center gap-2 border 
+                ${isSoldOut 
+                    ? 'bg-red-50 text-red-400 border-red-100' // Estilo Agotado
+                    : 'bg-gray-100 text-gray-400 border-gray-200' // Estilo Próximamente
+                }`}
           >
-            <Clock size={18} strokeWidth={2.5} className="mb-0.5" />
-            <span>Muy pronto</span>
+            {isSoldOut ? (
+                <>
+                    <Ban size={18} strokeWidth={2.5} className="mb-0.5" />
+                    <span>Sin Stock</span>
+                </>
+            ) : (
+                <>
+                    <Clock size={18} strokeWidth={2.5} className="mb-0.5" />
+                    <span>Muy pronto</span>
+                </>
+            )}
           </button>
         ) : (
-            /* CASO B: DISPONIBLE */
+            /* CASO B: DISPONIBLE (Botón Normal) */
             quantity === 0 ? (
             <button
                 onClick={() => addItem(product)}

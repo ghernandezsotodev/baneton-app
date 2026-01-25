@@ -11,13 +11,14 @@ export const revalidate = 60;
 // 2. Función para traer datos REALES de Sanity
 async function getProducts(): Promise<Product[]> {
   return await client.fetch(`
-    *[_type == "product"] | order(isAvailable desc, name asc) {
+    *[_type == "product"] | order(status asc, name asc) {
       "id": _id,
       name,
+      "slug": slug.current,
       description,
       price,
       "image": image.asset->url,
-      isAvailable
+      status
     }
   `);
 }
@@ -51,7 +52,6 @@ export default async function Home() {
           {/* LOGO REAL */}
           <div className="relative w-80 h-80 mb-8 transition-transform duration-700 hover:scale-105">
              <Image 
-               
                src="/images/logo.png" 
                alt="Banetón Panadería" 
                fill 
@@ -94,8 +94,9 @@ export default async function Home() {
               />
             ))
           ) : (
-            <div className="py-20 text-center opacity-50">
+            <div className="py-20 text-center opacity-50 flex flex-col items-center gap-2">
                 <p>Cargando productos...</p>
+                <p className="text-xs text-brand-gray">(Si no aparecen, revisa que estén publicados en el Panel)</p>
             </div>
           )}
         </div>
