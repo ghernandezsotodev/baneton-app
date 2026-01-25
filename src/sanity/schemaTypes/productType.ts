@@ -13,6 +13,17 @@ export const productType = defineType({
       type: 'string',
       validation: (rule) => rule.required(),
     }),
+    // CAMBIO 1: Slug para enlaces
+    defineField({
+      name: 'slug',
+      title: 'Slug (Enlace único)',
+      type: 'slug',
+      options: {
+        source: 'name',
+        maxLength: 96,
+      },
+      validation: (rule) => rule.required(),
+    }),
     defineField({
       name: 'description',
       title: 'Descripción',
@@ -33,12 +44,41 @@ export const productType = defineType({
         hotspot: true, // Esto permite recortar la foto si sale mal centrada
       },
     }),
+    // CAMBIO 2: Selector de Estado (Reemplaza a isAvailable)
     defineField({
-      name: 'isAvailable',
-      title: '¿Está disponible?',
-      type: 'boolean',
-      initialValue: true,
-      description: 'Desactívalo para mostrar "Próximamente" (Ideal para el Pan de Masa Madre).',
+      name: 'status',
+      title: 'Estado del Producto',
+      type: 'string',
+      initialValue: 'available',
+      options: {
+        list: [
+          { title: '🟢 Disponible', value: 'available' },
+          { title: '🔴 Agotado (Sin Stock)', value: 'sold_out' },
+          { title: '🔜 Próximamente', value: 'coming_soon' },
+        ],
+        layout: 'radio', 
+      },
+      validation: (rule) => rule.required(),
     }),
   ],
+  preview: {
+    select: {
+      title: 'name',
+      subtitle: 'status',
+      media: 'image',
+    },
+    prepare(selection) {
+      const {title, subtitle, media} = selection
+      const statusMap: Record<string, string> = {
+        available: '🟢 Disponible',
+        sold_out: '🔴 Agotado',
+        coming_soon: '🔜 Próximamente'
+      }
+      return {
+        title: title,
+        subtitle: statusMap[subtitle] || subtitle,
+        media: media,
+      }
+    },
+  },
 })
