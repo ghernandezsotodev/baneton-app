@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@sanity/image-url": "^1.2.0",
+    "@sanity/locale-es-es": "^1.2.30",
     "@sanity/vision": "^4.22.0",
     "clsx": "^2.1.1",
     "lucide-react": "^0.562.0",

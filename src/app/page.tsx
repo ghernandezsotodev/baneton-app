@@ -49,9 +49,10 @@ export default async function Home() {
           </div>
           
           {/* LOGO REAL */}
-          <div className="relative w-64 h-64 mb-8 transition-transform duration-700 hover:scale-105">
+          <div className="relative w-80 h-80 mb-8 transition-transform duration-700 hover:scale-105">
              <Image 
-               src="/images/logo.svg" 
+               
+               src="/images/logo.png" 
                alt="Banetón Panadería" 
                fill 
                className="object-contain drop-shadow-xl"
@@ -61,13 +62,14 @@ export default async function Home() {
           </div>
           
           {/* Título */}
-          <h1 className="text-4xl md:text-6xl font-black text-brand-dark mb-4 tracking-tight leading-tight text-balance">
+          <h1 className="text-3xl md:text-5xl font-bold text-brand-dark mb-4 tracking-tight leading-tight text-balance">
             Banetón
           </h1>
-          <p className="text-brand-gray text-lg md:text-xl font-medium leading-relaxed max-w-sm mx-auto text-balance tracking-tight">
+          <p className="text-brand-gray text-base md:text-lg font-medium leading-relaxed max-w-sm mx-auto text-balance tracking-tight">
             Panadería artesanal consciente. <br/>
             Especialistas en <span className="text-brand-dark underline decoration-brand-terracotta/50 underline-offset-4 decoration-2">Pan Pita</span> y Masa Madre.
           </p>
+
         </div>
       </header>
 
