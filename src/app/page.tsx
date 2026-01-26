@@ -52,7 +52,7 @@ export default async function Home() {
           {/* LOGO REAL */}
           <div className="relative w-80 h-80 mb-8 transition-transform duration-700 hover:scale-105">
              <Image 
-               src="/images/logo.svg" 
+               src="/images/logo.png" 
                alt="Banetón Panadería" 
                fill 
                className="object-contain drop-shadow-xl"
