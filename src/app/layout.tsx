@@ -19,7 +19,7 @@ export const viewport: Viewport = {
 
 // 3. Metadatos "Premium": Lo que ven Google y WhatsApp
 export const metadata: Metadata = {
-  metadataBase: new URL("https://baneton-app.vercel.app/"), 
+  metadataBase: new URL("https://baneton.vercel.app/"), 
   
   title: {
     default: "Banetón | Panadería Artesanal",
