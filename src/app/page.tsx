@@ -2,36 +2,56 @@ import { client } from "@/sanity/lib/client";
 import { Product } from "@/data/products";
 import ProductCard from "@/components/ProductCard";
 import CartFloat from "@/components/CartFloat";
-import Image from "next/image"; 
+import Image from "next/image";
+import Link from "next/link"; // Importante para la navegación interna
 
 // 1. Configuración de Revalidación (ISR)
-// Esto hace que la página se actualice sola cada 60 segundos si hay cambios en Sanity
 export const revalidate = 60;
 
-// 2. Función para traer datos REALES de Sanity
+// 2. Función para traer datos REALES de Sanity (Con Categorías)
 async function getProducts(): Promise<Product[]> {
   return await client.fetch(`
-    *[_type == "product"] | order(status asc, name asc) {
+    *[_type == "product"] | order(category->name asc, name asc) {
       "id": _id,
       name,
       "slug": slug.current,
       description,
       price,
       "image": image.asset->url,
-      status
+      status,
+      "categoryName": category->name
     }
   `);
+}
+
+// Helper para agrupar productos por categoría
+function groupProductsByCategory(products: Product[]) {
+  const groups: Record<string, Product[]> = {};
+  
+  products.forEach(product => {
+    const catName = product.categoryName || "Otros"; // Si no tiene categoría, va a "Otros"
+    if (!groups[catName]) {
+      groups[catName] = [];
+    }
+    groups[catName].push(product);
+  });
+
+  // Convertimos el objeto a un array ordenado (Ej: Panadería primero, luego Bollería...)
+  
+  return Object.entries(groups).sort((a, b) => a[0].localeCompare(b[0]));
 }
 
 // 3. Componente Async (Server Component)
 export default async function Home() {
   const products = await getProducts();
+  const groupedProducts = groupProductsByCategory(products);
+  const categories = groupedProducts.map(([name]) => name);
 
   return (
-    <div className="min-h-screen pb-40 overflow-x-hidden bg-brand-cream selection:bg-brand-terracotta/30">
+    <div className="min-h-screen pb-40 overflow-x-hidden bg-brand-cream selection:bg-brand-terracotta/30 scroll-smooth">
       
-      {/* 1. Hero Section (TU DISEÑO EXACTO) */}
-      <header className="relative pt-20 pb-20 px-6 text-center overflow-hidden">
+      {/* 1. Hero Section  */}
+      <header className="relative pt-20 pb-12 px-6 text-center overflow-hidden">
         
         {/* Glow de fondo */}
         <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[500px] h-[500px] bg-brand-terracotta/20 rounded-full blur-[100px] -z-10 opacity-50 pointer-events-none mix-blend-multiply"></div>
@@ -50,7 +70,7 @@ export default async function Home() {
           </div>
           
           {/* LOGO REAL */}
-          <div className="relative w-80 h-80 mb-8 transition-transform duration-700 hover:scale-105">
+          <div className="relative w-64 h-64 md:w-80 md:h-80 mb-8 transition-transform duration-700 hover:scale-105">
              <Image 
                src="/images/logo.png" 
                alt="Banetón Panadería" 
@@ -73,37 +93,60 @@ export default async function Home() {
         </div>
       </header>
 
-      {/* 2. Grilla de Productos (DATA REAL) */}
-      <main className="px-6 max-w-md md:max-w-2xl lg:max-w-5xl mx-auto">
-        
-        {/* Separador Visual */}
-        <div className="flex items-center gap-4 mb-10 opacity-80">
-            <div className="h-px bg-brand-dark/10 flex-1"></div>
-            <span className="text-xs font-bold uppercase tracking-[0.2em] text-brand-gray">Menú Fresco</span>
-            <div className="h-px bg-brand-dark/10 flex-1"></div>
-        </div>
+      {/* Barra de Navegación de Categorías (Sticky) */}
+      {categories.length > 0 && (
+        <nav className="sticky top-0 z-40 bg-brand-cream/95 backdrop-blur-md border-b border-brand-dark/5 py-4 px-4 mb-8 shadow-sm">
+          <ul className="flex justify-center gap-4 md:gap-8 overflow-x-auto no-scrollbar snap-x">
+            {categories.map((catName) => (
+              <li key={catName} className="snap-start flex-shrink-0">
+                <Link 
+                  href={`#${catName}`} 
+                  className="px-4 py-2 rounded-full text-sm font-bold text-brand-dark/70 hover:text-brand-dark hover:bg-white/50 transition-all uppercase tracking-wide border border-transparent hover:border-brand-dark/10"
+                >
+                  {catName}
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </nav>
+      )}
 
-        {/* Flexbox centrado */}
-        <div className="flex flex-wrap justify-center gap-8 lg:gap-10">
-          {products.length > 0 ? (
-            products.map((product, index) => (
-              <ProductCard 
-                key={product.id} 
-                product={product} 
-                priority={index === 0} 
-              />
-            ))
-          ) : (
-            <div className="py-20 text-center opacity-50 flex flex-col items-center gap-2">
-                <p>Cargando productos...</p>
-                <p className="text-xs text-brand-gray">(Si no aparecen, revisa que estén publicados en el Panel)</p>
-            </div>
-          )}
-        </div>
+      {/* 2. Menú por Categorías*/}
+      <main className="px-4 md:px-6 max-w-5xl mx-auto">
+        
+        {groupedProducts.length > 0 ? (
+          groupedProducts.map(([categoryName, items]) => (
+            <section key={categoryName} id={categoryName} className="mb-16 scroll-mt-24">
+              
+              {/* Título de Categoría */}
+              <div className="flex items-center gap-4 mb-8 opacity-90">
+                <h2 className="text-2xl font-bold text-brand-dark capitalize">{categoryName}</h2>
+                <div className="h-px bg-brand-dark/10 flex-1"></div>
+              </div>
+
+              {/* Grilla de Productos de esa Categoría */}
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-6 lg:gap-8">
+                {items.map((product) => (
+                  <ProductCard 
+                    key={product.id} 
+                    product={product} 
+                    priority={false} 
+                  />
+                ))}
+              </div>
+
+            </section>
+          ))
+        ) : (
+          <div className="py-20 text-center opacity-50 flex flex-col items-center gap-2">
+              <p>Cargando productos...</p>
+              <p className="text-xs text-brand-gray">(Si no aparecen, asegúrate de haberles asignado una CATEGORÍA en el Panel)</p>
+          </div>
+        )}
       </main>
 
       {/* 3. Footer */}
-      <footer className="mt-32 text-center pb-12 opacity-50 hover:opacity-100 transition-opacity duration-500">
+      <footer className="mt-20 text-center pb-12 opacity-50 hover:opacity-100 transition-opacity duration-500">
         <div className="flex justify-center items-center gap-2 mb-4">
            <div className="h-1 w-1 rounded-full bg-brand-dark"></div>
            <div className="h-1 w-1 rounded-full bg-brand-dark"></div>
@@ -113,7 +156,7 @@ export default async function Home() {
           Hecho a mano en Talca
         </p>
         <div className="text-[10px] text-brand-gray">
-          &copy; 2025 Banetón
+          &copy; 2026 Banetón
         </div>
       </footer>
 
