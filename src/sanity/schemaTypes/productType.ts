@@ -13,7 +13,7 @@ export const productType = defineType({
       type: 'string',
       validation: (rule) => rule.required(),
     }),
-    // CAMBIO 1: Slug para enlaces
+    // Slug para enlaces
     defineField({
       name: 'slug',
       title: 'Slug (Enlace único)',
@@ -22,6 +22,15 @@ export const productType = defineType({
         source: 'name',
         maxLength: 96,
       },
+      validation: (rule) => rule.required(),
+    }),
+    // Referencia a la Categoría
+    defineField({
+      name: 'category',
+      title: 'Categoría',
+      description: 'Selecciona a qué grupo pertenece este producto (Ej: Panadería)',
+      type: 'reference',
+      to: [{type: 'category'}],
       validation: (rule) => rule.required(),
     }),
     defineField({
@@ -44,7 +53,7 @@ export const productType = defineType({
         hotspot: true, // Esto permite recortar la foto si sale mal centrada
       },
     }),
-    // CAMBIO 2: Selector de Estado (Reemplaza a isAvailable)
+    // Selector de Estado
     defineField({
       name: 'status',
       title: 'Estado del Producto',
