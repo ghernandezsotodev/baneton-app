@@ -3,15 +3,15 @@ import { Product } from "@/data/products";
 import ProductCard from "@/components/ProductCard";
 import CartFloat from "@/components/CartFloat";
 import Image from "next/image";
-import Link from "next/link"; // Importante para la navegación interna
+import Link from "next/link";
 
 // 1. Configuración de Revalidación (ISR)
 export const revalidate = 60;
 
-// 2. Función para traer datos REALES de Sanity (Con Categorías)
+// 2. Función para traer datos REALES de Sanity
 async function getProducts(): Promise<Product[]> {
   return await client.fetch(`
-    *[_type == "product"] | order(category->name asc, name asc) {
+    *[_type == "product"] | order(name asc) {
       "id": _id,
       name,
       "slug": slug.current,
@@ -24,24 +24,66 @@ async function getProducts(): Promise<Product[]> {
   `);
 }
 
-// Helper para agrupar productos por categoría
+// 3. Lógica Maestra de Ordenamiento
 function groupProductsByCategory(products: Product[]) {
   const groups: Record<string, Product[]> = {};
   
+  // A. Agrupamos
   products.forEach(product => {
-    const catName = product.categoryName || "Otros"; // Si no tiene categoría, va a "Otros"
+    const catName = product.categoryName || "Otros";
     if (!groups[catName]) {
       groups[catName] = [];
     }
     groups[catName].push(product);
   });
 
-  // Convertimos el objeto a un array ordenado (Ej: Panadería primero, luego Bollería...)
-  
-  return Object.entries(groups).sort((a, b) => a[0].localeCompare(b[0]));
+  // B. Ordenamos los PRODUCTOS dentro de cada categoría (Por Estado)
+  // Peso: Disponible (1) < Próximamente (2) < Agotado (3)
+  const statusWeight: Record<string, number> = {
+    'available': 1,
+    'coming_soon': 2,
+    'sold_out': 3
+  };
+
+  Object.keys(groups).forEach(cat => {
+    groups[cat].sort((a, b) => {
+      const weightA = statusWeight[a.status] || 99;
+      const weightB = statusWeight[b.status] || 99;
+      
+      // Si tienen distinto estado, gana el de menor peso (Disponible)
+      if (weightA !== weightB) return weightA - weightB;
+      
+      // Si tienen el mismo estado, ordenamos alfabéticamente por nombre
+      return a.name.localeCompare(b.name);
+    });
+  });
+
+  // C. Ordenamos las CATEGORÍAS (Panadería primero)
+  // Definimos el orden de prioridad "Hardcoded" para el negocio
+  const categoryPriority = ["Panadería", "Bollería", "Pastelería", "Sándwiches", "Bebidas"];
+
+  return Object.entries(groups).sort((a, b) => {
+    const nameA = a[0];
+    const nameB = b[0];
+
+    const indexA = categoryPriority.indexOf(nameA);
+    const indexB = categoryPriority.indexOf(nameB);
+
+    // Si ambos están en la lista de prioridad, gana el que tenga menor índice
+    if (indexA !== -1 && indexB !== -1) return indexA - indexB;
+    
+    // Si solo A está en la lista, A gana (se va arriba)
+    if (indexA !== -1) return -1;
+    
+    // Si solo B está en la lista, B gana
+    if (indexB !== -1) return 1;
+
+    // Si ninguno está en la lista (ej: "Otros"), se ordenan alfabéticamente
+    return nameA.localeCompare(nameB);
+  });
 }
 
-// 3. Componente Async (Server Component)
+// 4. Componente Principal
 export default async function Home() {
   const products = await getProducts();
   const groupedProducts = groupProductsByCategory(products);
@@ -50,15 +92,11 @@ export default async function Home() {
   return (
     <div className="min-h-screen pb-40 overflow-x-hidden bg-brand-cream selection:bg-brand-terracotta/30 scroll-smooth">
       
-      {/* 1. Hero Section  */}
+      {/* Hero Section */}
       <header className="relative pt-20 pb-12 px-6 text-center overflow-hidden">
-        
-        {/* Glow de fondo */}
         <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[500px] h-[500px] bg-brand-terracotta/20 rounded-full blur-[100px] -z-10 opacity-50 pointer-events-none mix-blend-multiply"></div>
 
         <div className="max-w-xl mx-auto relative z-10 flex flex-col items-center animate-enter">
-          
-          {/* Status Badge */}
           <div className="inline-flex items-center gap-2 py-1.5 px-4 rounded-full bg-white/60 backdrop-blur-sm border border-brand-green/20 shadow-sm mb-12 transition-transform hover:scale-105 cursor-default">
             <span className="relative flex h-2 w-2">
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-brand-green opacity-75"></span>
@@ -69,7 +107,6 @@ export default async function Home() {
             </span>
           </div>
           
-          {/* LOGO REAL */}
           <div className="relative w-64 h-64 md:w-80 md:h-80 mb-8 transition-transform duration-700 hover:scale-105">
              <Image 
                src="/images/logo.png" 
@@ -81,7 +118,6 @@ export default async function Home() {
              />
           </div>
           
-          {/* Título */}
           <h1 className="text-3xl md:text-5xl font-bold text-brand-dark mb-4 tracking-tight leading-tight text-balance">
             Banetón
           </h1>
@@ -89,11 +125,10 @@ export default async function Home() {
             Panadería artesanal consciente. <br/>
             Especialistas en <span className="text-brand-dark underline decoration-brand-terracotta/50 underline-offset-4 decoration-2">Pan Pita</span> y Masa Madre.
           </p>
-
         </div>
       </header>
 
-      {/* Barra de Navegación de Categorías (Sticky) */}
+      {/* Navegación Sticky */}
       {categories.length > 0 && (
         <nav className="sticky top-0 z-40 bg-brand-cream/95 backdrop-blur-md border-b border-brand-dark/5 py-4 px-4 mb-8 shadow-sm">
           <ul className="flex justify-center gap-4 md:gap-8 overflow-x-auto no-scrollbar snap-x">
@@ -111,30 +146,26 @@ export default async function Home() {
         </nav>
       )}
 
-      {/* 2. Menú por Categorías*/}
+      {/* Menú por Categorías */}
       <main className="px-4 md:px-6 max-w-5xl mx-auto">
-        
         {groupedProducts.length > 0 ? (
           groupedProducts.map(([categoryName, items]) => (
             <section key={categoryName} id={categoryName} className="mb-16 scroll-mt-24">
-              
-              {/* Título de Categoría */}
               <div className="flex items-center gap-4 mb-8 opacity-90">
                 <h2 className="text-2xl font-bold text-brand-dark capitalize">{categoryName}</h2>
                 <div className="h-px bg-brand-dark/10 flex-1"></div>
               </div>
 
-              {/* Grilla de Productos de esa Categoría */}
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-6 lg:gap-8">
-                {items.map((product) => (
+                {items.map((product, index) => (
                   <ProductCard 
                     key={product.id} 
                     product={product} 
-                    priority={false} 
+                    // CORRECCIÓN: Damos prioridad solo al primer producto de la primera categoría para optimizar LCP
+                    priority={index === 0 && categoryName === groupedProducts[0][0]} 
                   />
                 ))}
               </div>
-
             </section>
           ))
         ) : (
@@ -145,7 +176,7 @@ export default async function Home() {
         )}
       </main>
 
-      {/* 3. Footer */}
+      {/* Footer */}
       <footer className="mt-20 text-center pb-12 opacity-50 hover:opacity-100 transition-opacity duration-500">
         <div className="flex justify-center items-center gap-2 mb-4">
            <div className="h-1 w-1 rounded-full bg-brand-dark"></div>
