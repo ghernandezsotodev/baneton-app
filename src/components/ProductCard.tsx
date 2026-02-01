@@ -45,8 +45,11 @@ export default function ProductCard({ product, priority = false }: ProductCardPr
              src={product.image} 
              alt={product.name} 
              fill 
+             // CAMBIO 1: Calidad al 90% para texturas de comida
+             quality={90}
              className={`object-cover transition-transform duration-700 ease-out ${canBuy ? 'group-hover:scale-105' : ''}`}
-             sizes="(max-width: 768px) 112px, 128px"
+             // CAMBIO 2: Tamaños más grandes para pantallas Retina (evita pixelado)
+             sizes="(max-width: 768px) 300px, 400px"
              priority={priority}
            />
         ) : (
